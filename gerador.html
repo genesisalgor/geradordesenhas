@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>GeradorSenha - Privacidade Máxima</title>
+    <title>GeradorSenha - Criptografia & Entropia</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
@@ -45,6 +45,14 @@
             border-color: #198754;
             box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
         }
+
+        /* Transição suave da barra de força */
+        .barra-forca {
+            height: 6px;
+            border-radius: 3px;
+            transition: width 0.4s ease, background-color 0.4s ease;
+            width: 0%;
+        }
     </style>
   </head>
   <body>
@@ -58,7 +66,7 @@
         </button>
       </div>
 
-      <div class="input-group mb-3">
+      <div class="input-group mb-2">
         <input type="password" id="campo-senha" class="form-control form-control-lg text-center font-monospace" placeholder="Sua Senha será Gerada Aqui" readonly>
         
         <button class="btn btn-outline-secondary" type="button" id="btn-visualizar" title="Mostrar/Ocultar Senha">
@@ -68,6 +76,16 @@
         <button class="btn btn-purple" type="button" id="btn-copiar" title="Copiar Senha">
           <i id="icone-copiar" class="bi bi-copy"></i>
         </button>
+      </div>
+
+      <div class="mb-3 px-1">
+        <div class="progress" style="height: 6px; background-color: var(--bs-border-color);">
+          <div id="indicador-forca" class="barra-forca"></div>
+        </div>
+        <div class="d-flex justify-content-between mt-1" style="font-size: 0.75rem;">
+          <span id="metadados-entropia" class="text-secondary">0 bits</span>
+          <span id="texto-forca" class="text-muted fw-bold">Defina os parâmetros</span>
+        </div>
       </div>
 
       <div class="mb-3">
@@ -112,10 +130,13 @@
 
       const btnCopiar = document.getElementById('btn-copiar');
       const iconeCopiar = document.getElementById('icone-copiar');
-
-      // NOVO: Seleção dos elementos de visualização
       const btnVisualizar = document.getElementById('btn-visualizar');
       const iconeVisualizar = document.getElementById('icone-visualizar');
+
+      // NOVO: Componentes do Medidor de Força
+      const indicadorForca = document.getElementById('indicador-forca');
+      const textoForca = document.getElementById('texto-forca');
+      const metadadosEntropia = document.getElementById('metadados-entropia');
 
       const caracteres = {
         minusculas: 'abcdefghijklmnopqrstuvwxyz',
@@ -137,7 +158,6 @@
       checkboxes.forEach(chk => {
         chk.addEventListener('change', () => {
           campoSenha.classList.remove('is-invalid', 'is-valid');
-          // Restaura o tipo padrão do placeholder caso mude o input
           if(campoSenha.value === '') campoSenha.type = "password";
           campoSenha.placeholder = "Sua Senha será Gerada Aqui";
         });
@@ -150,11 +170,43 @@
         return stringDeCaracteres[indiceAleatorio];
       }
 
+      // NOVO: Cálculo matemático de Entropia de Shannon
+      function atualizarMedidorDeForca(comprimento, tamanhoPool) {
+        if (tamanhoPool === 0) {
+          indicadorForca.style.width = '0%';
+          metadadosEntropia.textContent = '0 bits';
+          textoForca.textContent = 'Defina os parâmetros';
+          return;
+        }
+
+        // Fórmula: E = L * log2(R)
+        const entropia = comprimento * Math.log2(tamanhoPool);
+        metadadosEntropia.textContent = `${Math.round(entropia)} bits`;
+
+        indicadorForca.classList.remove('bg-danger', 'bg-warning', 'bg-success');
+
+        // Escores baseados em padrões de segurança de Entropia (NIST)
+        if (entropia < 40) {
+          indicadorForca.style.width = '33%';
+          indicadorForca.classList.add('bg-danger');
+          textoForca.textContent = 'Senha Fraca 🔴';
+        } else if (entropia >= 40 && entropia < 60) {
+          indicadorForca.style.width = '66%';
+          indicadorForca.classList.add('bg-warning');
+          textoForca.textContent = 'Senha Média 🟡';
+        } else {
+          indicadorForca.style.width = '100%';
+          indicadorForca.classList.add('bg-success');
+          textoForca.textContent = 'Senha Forte 🔥';
+        }
+      }
+
       function gerarSenha() {
         campoSenha.classList.remove('is-valid', 'is-invalid');
         
         let bancoDeCaracteres = '';
         let senhaGarantida = [];
+        let poolSize = 0;
 
         checkboxes.forEach(chk => {
           if (chk.checked) {
@@ -162,16 +214,18 @@
             const pool = caracteres[tipo];
             if (pool) {
               bancoDeCaracteres += pool;
+              poolSize += pool.length;
               senhaGarantida.push(obterCaractereAleatorio(pool));
             }
           }
         });
 
         if (bancoDeCaracteres === '') {
-          campoSenha.type = 'text'; // Muda temporariamente para texto para ler o placeholder de erro
+          campoSenha.type = 'text';
           campoSenha.classList.add('is-invalid');
           campoSenha.value = '';
           campoSenha.placeholder = 'Selecione ao menos uma opção!';
+          atualizarMedidorDeForca(0, 0);
           return;
         }
 
@@ -191,19 +245,20 @@
 
         campoSenha.value = senhaFinal.join('');
         iconeCopiar.className = 'bi bi-copy';
+
+        // Dispara a avaliação com base na matemática exata dos conjuntos selecionados
+        atualizarMedidorDeForca(comprimentoTotal, poolSize);
       }
 
-      // NOVO: Lógica para alternar visibilidade (type="password" <-> type="text")
       btnVisualizar.addEventListener('click', () => {
-        // Se houver erro na tela, não faz nada
         if (campoSenha.classList.contains('is-invalid')) return;
 
         if (campoSenha.type === 'password') {
           campoSenha.type = 'text';
-          iconeVisualizar.className = 'bi bi-eye-fill'; // Olho aberto
+          iconeVisualizar.className = 'bi bi-eye-fill';
         } else {
           campoSenha.type = 'password';
-          iconeVisualizar.className = 'bi bi-eye-slash-fill'; // Olho cortado
+          iconeVisualizar.className = 'bi bi-eye-slash-fill';
         }
       });
 
