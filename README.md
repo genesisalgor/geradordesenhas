@@ -21,4 +21,6 @@ Um gerador de senhas moderno, elegante e altamente customizável construído com
 ## 🎨 Demonstração Visual
 
 ### Visual Geral (Dark Mode)
-> **Dica:** Substitua o caminho abaixo por um print real da tela do seu projeto ou um GIF dele funcionando!
+
+<img width="713" height="645" alt="image" src="https://github.com/user-attachments/assets/f38604ef-7937-49f5-ae32-be9f1af2991e" />
+
