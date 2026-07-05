@@ -1,4 +1,4 @@
-# 🔐 Gerador de Senhas Ultra Pro
+# 🔐 Gerador de Senhas
 
 ![Licença](https://img.shields.io/github/license/seu-usuario/seu-repositorio?color=6f42c1)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3.3-purple?logo=bootstrap&logoColor=white)
